@@ -1,101 +1,232 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import michelinData from "C:/Users/cfrye/toptable/data/michelinData.json"; // Adjust this path as needed for ES module import
 
-export default function Home() {
+// Interface for Google Places API restaurant data
+interface GoogleRestaurant {
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  place_id: string;
+  name: string;
+  rating: number;
+  user_ratings_total: number;
+  price_level?: number;
+  photos?: { 
+    photo_reference: string; 
+  }[]; // Array of photos, optional because some places may not have photos
+}
+
+// Interface for Michelin restaurant data
+interface MichelinRestaurant {
+  Name: string;
+  Latitude: number;
+  Longitude: number;
+  Award: string;
+  // Add other relevant fields as needed
+}
+
+// Type for combining Google and Michelin restaurant properties
+type CombinedRestaurant = GoogleRestaurant & Partial<MichelinRestaurant> & {
+  isMichelin?: boolean;
+  michelinAward?: string | null;
+};
+
+// Haversine formula to calculate distance between two latitude/longitude points
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// Match Google restaurant with Michelin restaurant by coordinates
+const matchWithMichelin = (googleRestaurant: GoogleRestaurant): MichelinRestaurant | undefined => {
+  const { lat, lng } = googleRestaurant.geometry.location;
+  const match = (michelinData as MichelinRestaurant[]).find((michelinRestaurant) => {
+    const latMatch = Math.abs(michelinRestaurant.Latitude - lat) < 0.0005;
+    const lngMatch = Math.abs(michelinRestaurant.Longitude - lng) < 0.0005;
+    return latMatch && lngMatch;
+  });
+
+  // Debugging log to check match results
+  if (match) {
+    console.log(`Match found for ${googleRestaurant.name}: ${match.Name} with Award: ${match.Award}`);
+  } else {
+    console.log(`No Michelin match found for ${googleRestaurant.name}`);
+  }
+
+  return match;
+};
+
+const Home = () => {
+  const [placeType, setPlaceType] = useState('restaurant');
+  const [location, setLocation] = useState<string>('');
+  const [restaurants, setRestaurants] = useState<CombinedRestaurant[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [radius, setRadius] = useState<number>(2); // Default radius in km
+  const [minRating, setMinRating] = useState<number>(4.5);
+  const [price, setPrice] = useState<string>('');
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    try {
+        setError(null);
+
+        const response = await axios.get('/api/fetchRestaurants', {
+            params: { 
+                location: location.trim(),
+                radius: radius * 1000,
+                type: placeType // Make sure this is included
+            }
+        });
+
+        console.log('Place Type:', placeType); // Debugging console log in page.tsx
+
+        let googleResults: CombinedRestaurant[] = response.data;
+
+        // Process and filter results as needed
+        googleResults = googleResults
+            .filter((restaurant) => 
+                restaurant.rating >= minRating &&
+                (price === '' || restaurant.price_level === price.length)
+            )
+            .map((restaurant) => {
+                const michelinRestaurant = matchWithMichelin(restaurant);
+                return {
+                    ...restaurant,
+                    isMichelin: Boolean(michelinRestaurant),
+                    michelinAward: michelinRestaurant ? michelinRestaurant.Award : null,
+                };
+            })
+            .sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+
+        setRestaurants(googleResults);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Failed to fetch data. Please try again.");
+    } finally {
+        setIsLoading(false);
+    }
+
+    console.log('Place Type:', placeType); // In handleSearch
+};
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="p-4">
+      <h1 className="text-3xl font-bold mb-4">TrueGuide</h1>
+      <label htmlFor="placeType">Choose Place Type:</label>
+      <select id="placeType" value={placeType} onChange={(e) => setPlaceType(e.target.value)}>
+        <option value="restaurant">Restaurants</option>
+        <option value="hotel">Hotels</option>
+      </select>
+      <label className="block text-gray-700">Location:</label>
+      <input
+        type="text"
+        placeholder="Enter coordinates (e.g., 40.748817,-73.985428)"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
+      />
+      <div className="mb-4">
+        <label className="block text-gray-700">Search Radius (km):</label>
+        <input
+          type="number"
+          value={radius}
+          onChange={(e) => setRadius(Number(e.target.value))}
+          min="1"
+          max="50"
+          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700">Minimum Rating:</label>
+        <input
+          type="number"
+          value={minRating}
+          onChange={(e) => setMinRating(Number(e.target.value))}
+          step="0.1"
+          min="1"
+          max="5"
+          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700">Price Level:</label>
+        <select
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
+        >
+          <option value="">All</option>
+          <option value="$">$</option>
+          <option value="$$">$$</option>
+          <option value="$$$">$$$</option>
+          <option value="$$$$">$$$$</option>
+        </select>
+      </div>
+      <button
+        onClick={handleSearch}
+        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded w-full"
+      >
+        Search
+      </button>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {isLoading && <p>Loading...</p>}
+      {error && <p>{error}</p>}
+
+      <ul className="mt-6 space-y-4">
+        {restaurants.map((restaurant) => (
+          <li key={restaurant.place_id} className="border border-gray-300 p-4 rounded shadow flex items-center">
+            {/* Flex container */}
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold">
+              <a
+                href={`https://www.google.com/maps/place/?q=place_id:${restaurant.place_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                {restaurant.name}
+              </a>
+                {restaurant.isMichelin && (
+                  <span className="text-yellow-500"> ⭐ {restaurant.michelinAward}</span>
+                )}
+              </h2>
+              <p>Rating: {restaurant.rating}</p>
+              <p>Reviews: {restaurant.user_ratings_total}</p>
+              
+              {/* Conditionally render Price Level for restaurants only */}
+              {placeType === 'restaurant' && restaurant.price_level && (
+                <p>Price Level: {'$'.repeat(restaurant.price_level)}</p>
+              )}
+            </div>
+
+            {/* Image container, aligned right */}
+            {restaurant.photos && restaurant.photos.length > 0 && (
+              <div className="ml-4 flex-shrink-0">
+                <img
+                  src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photoreference=${restaurant.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                  alt={`${restaurant.name}`}
+                  className="w-24 h-24 object-cover rounded"
+                />
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
+};
+
+export default Home;
