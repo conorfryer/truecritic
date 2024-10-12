@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary-color: #1f1d1c; /* Replace with your chosen color */
+  --secondary-color: #52504d; /* Replace with your chosen color */
+  --background-color: #D6CECC; /* Replace with your chosen color */
+  --accent-color: #1f1d1c; /* Replace with your chosen color */
+  --text-color-dark: #333333;
+  --text-color-light: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,9 +19,33 @@
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color-dark);
+}
+
+.header {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+}
+
+.search-button {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  border: none;
+  padding: 0.5em 1em;
+}
+
+.card {
+  background-color: var(--background-color);
+  border: 1px solid var(--secondary-color);
+  color: var(--text-color-dark);
+}
+
+.badge-michelin {
+  background-color: var(--accent-color);
+  color: var(--text-color-light);
+  padding: 0.2em 0.4em;
+  border-radius: 5px;
 }
 
 @layer utilities {

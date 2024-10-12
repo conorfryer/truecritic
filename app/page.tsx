@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import michelinData from "C:/Users/cfrye/toptable/data/michelinData.json"; // Adjust this path as needed for ES module import
+import Image from 'next/image';
+import michelinData from "C:/Users/cfrye/truecritic/data/michelinData.json"; // Adjust this path as needed for ES module import
+import MichelinStar from "C:/Users/cfrye/truecritic/assets/MichelinStar.png";
 
 // Interface for Google Places API restaurant data
 interface GoogleRestaurant {
@@ -124,7 +126,7 @@ const Home = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-3xl font-bold mb-4">TrueGuide</h1>
+      <h1 className="text-3xl font-bold mb-4">TrueCritic</h1>
       <label htmlFor="placeType">Choose Place Type:</label>
       <select id="placeType" value={placeType} onChange={(e) => setPlaceType(e.target.value)}>
         <option value="restaurant">Restaurants</option>
@@ -190,17 +192,20 @@ const Home = () => {
           <li key={restaurant.place_id} className="border border-gray-300 p-4 rounded shadow flex items-center">
             {/* Flex container */}
             <div className="flex-1">
-              <h2 className="text-xl font-semibold">
-              <a
-                href={`https://www.google.com/maps/place/?q=place_id:${restaurant.place_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                {restaurant.name}
-              </a>
+              <h2 className="text-xl font-semibold flex items-center">
+                <a
+                  href={`https://www.google.com/maps/place/?q=place_id:${restaurant.place_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {restaurant.name}
+                </a>
                 {restaurant.isMichelin && (
-                  <span className="text-yellow-500"> ⭐ {restaurant.michelinAward}</span>
+                  <span className="flex items-center ml-2 text-yellow-700">
+                    <Image src={MichelinStar} alt="Michelin Star" width={16} height={16} className="mr-1" />
+                    {restaurant.michelinAward}
+                  </span>
                 )}
               </h2>
               <p>Rating: {restaurant.rating}</p>
@@ -211,14 +216,15 @@ const Home = () => {
                 <p>Price Level: {'$'.repeat(restaurant.price_level)}</p>
               )}
             </div>
-
             {/* Image container, aligned right */}
             {restaurant.photos && restaurant.photos.length > 0 && (
-              <div className="ml-4 flex-shrink-0">
-                <img
-                  src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photoreference=${restaurant.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                  alt={`${restaurant.name}`}
-                  className="w-24 h-24 object-cover rounded"
+              <div className="ml-4 flex-shrink-0 w-24 h-24 relative">
+              <Image
+                src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                alt={`${restaurant.name}`}
+                layout="fill" // Makes the image fill the parent div
+                objectFit="cover" // Ensures the image fills while keeping aspect ratio
+                className="rounded" // Apply rounded corners
                 />
               </div>
             )}
