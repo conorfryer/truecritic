@@ -69,6 +69,8 @@ const Home = () => {
   const [price, setPrice] = useState<string>('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [displayedCount, setDisplayedCount] = useState('');
+  const [tempRadius, setTempRadius] = useState(radius.toString());
+  const [tempMinRating, setTempMinRating] = useState(minRating.toString());
 
 
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
@@ -160,27 +162,43 @@ const Home = () => {
 
             {showAdvancedOptions && (
               <div className="space-y-4">
-                <label className="block text-gray-700">Search Radius (km):</label>
+                <label className="block text-gray-700">Radius (1 - 4.5 km):</label>
                 <input
                   type="number"
-                  value={radius}
-                  onChange={(e) => setRadius(Number(e.target.value))}
-                  min="0.5"
+                  value={tempRadius}
+                  onChange={(e) => setTempRadius(e.target.value)} // Update temporary state
+                  onBlur={() => {
+                    const value = parseFloat(tempRadius);
+                    if (!isNaN(value) && value >= 1 && value <= 4.5) {
+                      setRadius(value); // Update the actual radius state if valid
+                    } else {
+                      setTempRadius(radius.toString()); // Revert if out of range or invalid
+                    }
+                  }}
+                  min="0"
                   max="4.5"
-                  className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+                  step="0.1"
+                  className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
                 />
 
-                <label className="block text-gray-700">Minimum Rating:</label>
+                <label className="block text-gray-700">Minimum Rating (0.0 - 5.0):</label>
                 <input
                   type="number"
-                  value={minRating}
-                  onChange={(e) => setMinRating(Number(e.target.value))}
-                  step="0.1"
-                  min="1"
+                  value={tempMinRating}
+                  onChange={(e) => setTempMinRating(e.target.value)} // Update temporary state
+                  onBlur={() => {
+                    const value = parseFloat(tempMinRating);
+                    if (!isNaN(value) && value >= 0 && value <= 5) {
+                      setMinRating(value); // Update the actual minRating state if valid
+                    } else {
+                      setTempMinRating(minRating.toString()); // Revert if out of range or invalid
+                    }
+                  }}
+                  min="0"
                   max="5"
-                  className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+                  step="0.1"
+                  className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
                 />
-
                 <label className="block text-gray-700">Price Level:</label>
                 <select
                   value={price}
