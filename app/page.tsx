@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
 import michelinData from "C:/Users/cfrye/truecritic/data/michelinData.json"; // Adjust this path as needed for ES module import
 import MichelinStar from "C:/Users/cfrye/truecritic/assets/MichelinStar.png";
+import Logo from "C:/Users/cfrye/truecritic/assets/logo.png";
 
 // Interface for Google Places API restaurant data
 interface GoogleRestaurant {
@@ -79,13 +80,16 @@ const Home = () => {
   const [radius, setRadius] = useState<number>(2); // Default radius in km
   const [minRating, setMinRating] = useState<number>(4.5);
   const [price, setPrice] = useState<string>('');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Prevent default form submission behavior
+
     setIsLoading(true);
     try {
         setError(null);
 
-        const response = await axios.get('/api/fetchRestaurants', {
+        const response = await axios.get('/api/fetchResults', {
             params: { 
                 location: location.trim(),
                 radius: radius * 1000,
@@ -121,114 +125,158 @@ const Home = () => {
         setIsLoading(false);
     }
 
-    console.log('Place Type:', placeType); // In handleSearch
+    console.log('Place Type:', placeType);
 };
 
+
   return (
-    <div className="p-4">
-      <h1 className="text-3xl font-bold mb-4">TrueCritic</h1>
-      <label htmlFor="placeType">Choose Place Type:</label>
-      <select id="placeType" value={placeType} onChange={(e) => setPlaceType(e.target.value)}>
-        <option value="restaurant">Restaurants</option>
-        <option value="hotel">Hotels</option>
-      </select>
-      <label className="block text-gray-700">Location:</label>
-      <input
-        type="text"
-        placeholder="Enter coordinates (e.g., 40.748817,-73.985428)"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
-      />
-      <div className="mb-4">
-        <label className="block text-gray-700">Search Radius (km):</label>
-        <input
-          type="number"
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
-          min="1"
-          max="50"
-          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700">Minimum Rating:</label>
-        <input
-          type="number"
-          value={minRating}
-          onChange={(e) => setMinRating(Number(e.target.value))}
-          step="0.1"
-          min="1"
-          max="5"
-          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700">Price Level:</label>
-        <select
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="border border-gray-300 rounded p-2 mb-2 w-full text-black bg-white"
-        >
-          <option value="">All</option>
-          <option value="$">$</option>
-          <option value="$$">$$</option>
-          <option value="$$$">$$$</option>
-          <option value="$$$$">$$$$</option>
-        </select>
-      </div>
-      <button
-        onClick={handleSearch}
-        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded w-full"
-      >
-        Search
-      </button>
+    <div className="bg-gradient-to-b from-gray-100 to-gray-200 min-h-screen py-8">
+      <div className="p-8 bg-white shadow-md rounded-lg max-w-lg mx-auto mb-8">
 
-      {isLoading && <p>Loading...</p>}
-      {error && <p>{error}</p>}
+        <div className="flex justify-end items-center mb-2">
+          <h1 className="text-3xl font-bold">TrueCritic</h1>
+          <Image src={Logo} alt="TrueCritic Logo" width={40} height={40} className="ml-2" />
+        </div>
+        <p className="text-gray-600 text-sm text-end italic mb-6">Curated Quality, Simplified.</p>
 
-      <ul className="mt-6 space-y-4">
-        {restaurants.map((restaurant) => (
-          <li key={restaurant.place_id} className="border border-gray-300 p-4 rounded shadow flex items-center">
-            {/* Flex container */}
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold flex items-center">
-                <a
-                  href={`https://www.google.com/maps/place/?q=place_id:${restaurant.place_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  {restaurant.name}
-                </a>
-                {restaurant.isMichelin && (
-                  <span className="flex items-center ml-2 text-yellow-700">
-                    <Image src={MichelinStar} alt="Michelin Star" width={16} height={16} className="mr-1" />
-                    {restaurant.michelinAward}
-                  </span>
-                )}
-              </h2>
-              <p>Rating: {restaurant.rating}</p>
-              <p>Reviews: {restaurant.user_ratings_total}</p>
-              
-              {/* Conditionally render Price Level for restaurants only */}
-              {placeType === 'restaurant' && restaurant.price_level && (
-                <p>Price Level: {'$'.repeat(restaurant.price_level)}</p>
-              )}
-            </div>
-            {/* Image container, aligned right */}
-            {restaurant.photos && restaurant.photos.length > 0 && (
-              <div className="ml-4 flex-shrink-0 w-24 h-24 relative">
-              <Image
-                src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                alt={`${restaurant.name}`}
-                layout="fill" // Makes the image fill the parent div
-                objectFit="cover" // Ensures the image fills while keeping aspect ratio
-                className="rounded" // Apply rounded corners
+        {/* Wrap with a form */}
+        <form onSubmit={(event) => handleSearch(event)}>
+          <div className="space-y-4">
+            <label htmlFor="placeType" className="block text-gray-700">Choose Place Type:</label>
+            <select
+              id="placeType"
+              value={placeType}
+              onChange={(e) => setPlaceType(e.target.value)}
+              className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+            >
+              <option value="restaurant">Restaurants</option>
+              <option value="hotel">Hotels</option>
+            </select>
+
+            <label className="block text-gray-700">Location:</label>
+            <input
+              type="text"
+              placeholder="Enter a city, neighborhood, or specific location."
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              className="text-[#6E8898] text-sm focus:outline-none"
+            >
+              {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+            </button>
+
+            {showAdvancedOptions && (
+              <div className="space-y-4">
+                <label className="block text-gray-700">Search Radius (km):</label>
+                <input
+                  type="number"
+                  value={radius}
+                  onChange={(e) => setRadius(Number(e.target.value))}
+                  min="0.5"
+                  max="4.5"
+                  className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
                 />
+
+                <label className="block text-gray-700">Minimum Rating:</label>
+                <input
+                  type="number"
+                  value={minRating}
+                  onChange={(e) => setMinRating(Number(e.target.value))}
+                  step="0.1"
+                  min="1"
+                  max="5"
+                  className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+                />
+
+                <label className="block text-gray-700">Price Level:</label>
+                <select
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="border border-gray-300 rounded p-2 w-full text-black bg-white focus:shadow-md transition ease-in-out duration-200"
+                >
+                  <option value="">All</option>
+                  <option value="$">$</option>
+                  <option value="$$">$$</option>
+                  <option value="$$$">$$$</option>
+                  <option value="$$$$">$$$$</option>
+                </select>
               </div>
             )}
-          </li>
+          </div>
+
+          {/* Change button type to submit */}
+          <button
+            type="submit"
+            className="bg-[#6E8898] hover:bg-[#9FB1BC] text-white py-2 px-4 rounded w-full shadow-md mt-4 transition ease-in-out duration-200"
+            disabled={isLoading}
+          >
+            Search 🔍
+          </button>
+        </form>
+
+
+        {/* Loading Indicator */}
+        {isLoading && <div className="text-center mt-4">Loading...</div>}
+
+        {/* Error Message */}
+        {error && <div className="text-red-500 mt-4">{error}</div>}
+      </div>
+
+      {/* Results */}
+      {restaurants.length > 0 && (
+        <p className="text-center text-gray-600 mb-4">
+          Found {restaurants.length} {placeType === 'restaurant' ? 'restaurants' : 'hotels'} in this area.
+        </p>
+      )}
+      <ul className="space-y-4 mx-auto max-w-lg">
+        {restaurants.map((restaurant) => (
+          <a
+            href={`https://www.google.com/maps/place/?q=place_id:${restaurant.place_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            key={restaurant.place_id}
+            className="block"
+          >
+            <li
+              className="bg-white border border-gray-200 p-4 rounded shadow-lg flex items-center transition transform hover:scale-105 hover:bg-gray-50"
+            >
+              {/* Name and Michelin Award */}
+              <div className="flex-1">
+                <h2 className="text-2xl font-semibold text-gray-800 flex items-center">
+                  {restaurant.name}
+                </h2>
+                {placeType === "restaurant" && restaurant.isMichelin && (
+                  <div className="flex items-center mt-1 text-yellow-700">
+                    <Image src={MichelinStar} alt="Michelin Star" width={16} height={16} className="mr-1" />
+                    <span className="text-base font-bold">{restaurant.michelinAward}</span>
+                  </div>
+                )}
+                <p>Rating: {restaurant.rating}</p>
+                <p>Reviews: {restaurant.user_ratings_total}</p>
+                {placeType === 'restaurant' && restaurant.price_level && (
+                  <p>Price Level: {'$'.repeat(restaurant.price_level)}</p>
+                )}
+              </div>
+
+              {/* Restaurant Image */}
+              {restaurant.photos && restaurant.photos.length > 0 && (
+                <div className="ml-4 flex-shrink-0 w-24 h-24 relative">
+                  <Image
+                    src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                    alt={`${restaurant.name}`}
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded"
+                  />
+                </div>
+              )}
+            </li>
+          </a>
         ))}
       </ul>
     </div>

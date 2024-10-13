@@ -4,7 +4,7 @@ import axios from 'axios';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const location = searchParams.get('location');
-  const radius = searchParams.get('radius');
+  const radius = searchParams.get('radius') || '1500'; // Default radius if not specified
   const type = searchParams.get('type') || 'restaurant'; // Default to 'restaurant' if type not provided
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -31,19 +31,21 @@ export async function GET(req: NextRequest) {
       coordinates = `${lat},${lng}`;
     }
 
-    // Now use the coordinates with the Places API to fetch only restaurants
+    // Use reduced radius for neighborhood-level searches on specific place types
+    const adjustedRadius = type === 'hotel' ? '1000' : radius;
+
+    // Fetch data from Google Places API with specific type and optional keyword filter
     const placesResponse = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
       params: {
         location: coordinates,
-        radius,
-        type, // Use the dynamically set type
+        radius: adjustedRadius,
+        type,
+        keyword: type === 'hotel' ? 'accommodation' : '',
         key: apiKey,
       },
     });
 
     return NextResponse.json(placesResponse.data.results);
-
-    console.log('API Type:', type); // In route.ts
 
   } catch (error) {
     console.error("Error in fetchRestaurants:", error);
