@@ -39,23 +39,33 @@ Make sure you have the following installed:
 #### Installation
 
 1. Clone this repository:
+   
    ```
    git clone https://github.com/yourusername/truecritic.git
-2. Navigate to the project directory:
+   
+3. Navigate to the project directory:
+
    ```
    cd truecritic
-3. Install the dependencies:
+   
+5. Install the dependencies:
+
    ```
    npm install
-4. Set up environment variables:
+   
+7. Set up environment variables:
+   
 - Create a `.env.local` file in the root of the project.
 - Add your Google API key:
+
   ```
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
   ```
+  
 5. Run the development server:
    ```
    npm run dev
+   
 6. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ---
@@ -108,5 +118,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ### Acknowledgements
 
-This project, TrueCritic, was developed during HackHarvard 2024. Thanks to the event organizers and participants for providing a space to bring this idea to life.
+TrueCritic was developed during HackHarvard 2024. Thanks to the event organizers for providing a space to bring this idea to live.
+
 ---
