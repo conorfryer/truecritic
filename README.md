@@ -42,17 +42,14 @@ Make sure you have the following installed:
    
    ```
    git clone https://github.com/yourusername/truecritic.git
-   
 3. Navigate to the project directory:
 
    ```
    cd truecritic
-   
 5. Install the dependencies:
 
    ```
    npm install
-   
 7. Set up environment variables:
    
 - Create a `.env.local` file in the root of the project.
@@ -65,7 +62,6 @@ Make sure you have the following installed:
 5. Run the development server:
    ```
    npm run dev
-   
 6. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ---
