@@ -68,6 +68,8 @@ const Home = () => {
   const [minRating, setMinRating] = useState<number>(4.5);
   const [price, setPrice] = useState<string>('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [displayedCount, setDisplayedCount] = useState('');
+
 
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent default form submission behavior
@@ -105,14 +107,13 @@ const Home = () => {
             .sort((a, b) => b.user_ratings_total - a.user_ratings_total);
 
         setRestaurants(googleResults);
+        setDisplayedCount(`${googleResults.length} ${placeType}s found in this area.`);
     } catch (error) {
         console.error("Error fetching data:", error);
         setError("Failed to fetch data. Please try again.");
     } finally {
         setIsLoading(false);
     }
-
-    console.log('Place Type:', placeType);
 };
 
 
@@ -152,7 +153,7 @@ const Home = () => {
             <button
               type="button"
               onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-              className="text-[#6E8898] text-sm focus:outline-none"
+              className="text-gray-700 text-sm focus:outline-none"
             >
               {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
             </button>
@@ -217,7 +218,7 @@ const Home = () => {
       {/* Results */}
       {restaurants.length > 0 && (
         <p className="text-center text-gray-600 mb-4">
-          Found {restaurants.length} {placeType === 'restaurant' ? 'restaurants' : 'hotels'} in this area.
+          {displayedCount}
         </p>
       )}
       <ul className="space-y-4 mx-auto max-w-lg">
