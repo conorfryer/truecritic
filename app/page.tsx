@@ -2,9 +2,9 @@
 import { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
-import michelinData from "C:/Users/cfrye/truecritic/data/michelinData.json"; // Adjust this path as needed for ES module import
-import MichelinStar from "C:/Users/cfrye/truecritic/assets/MichelinStar.png";
-import Logo from "C:/Users/cfrye/truecritic/assets/logo.png";
+import michelinData from "../data/michelinData.json"; // Adjust this path as needed for ES module import
+import MichelinStar from "../assets/MichelinStar.png";
+import Logo from "../assets/logo.png";
 
 // Interface for Google Places API restaurant data
 interface GoogleRestaurant {
