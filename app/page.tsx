@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
 import michelinData from "../data/michelinData.json"; // Adjust this path as needed for ES module import
@@ -37,19 +37,6 @@ interface MichelinRestaurant {
 type CombinedRestaurant = GoogleRestaurant & Partial<MichelinRestaurant> & {
   isMichelin?: boolean;
   michelinAward?: string | null;
-};
-
-// Haversine formula to calculate distance between two latitude/longitude points
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Radius of the Earth in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
 };
 
 // Match Google restaurant with Michelin restaurant by coordinates
